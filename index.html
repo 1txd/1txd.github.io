@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport"
+			content="width=device-width, height=device-height, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+		<meta name="referrer" content="no-referrer" />
+		<script src="//cdn.bootcdn.net/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+		<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+
+		<title></title>
+	</head>
+	<body>
+
+		<div id="app">
+			<el-form label-width="100px">
+				<el-form-item label="原始地址:">
+					<el-input type="text" v-model="my_url" placeholder="请输入内容"></el-input>
+				</el-form-item>
+				<el-form-item label="别人地址:">
+					<el-input type="text" v-model="other_url" placeholder="请输入内容"></el-input>
+				</el-form-item>
+				<el-form-item label="自己标题:">
+					<el-input type="text" v-model="my_data.title" placeholder="请输入内容"></el-input>
+				</el-form-item>
+				<el-form-item label="自己按钮名称:">
+					<el-input type="text" v-model="my_data.btnText" placeholder="请输入内容"></el-input>
+				</el-form-item>
+				<el-form-item label="自己按钮链接:">
+					<el-input type="text" v-model="my_data.btnUrl" placeholder="请输入内容"></el-input>
+				</el-form-item>
+				<el-form-item label="别人m3u8:">
+					<el-input type="text" v-model="other_data.m3u8" placeholder="请输入内容"></el-input>
+				</el-form-item>
+				<el-form-item label="成功地址:">
+					<el-input type="text" v-model="ok_url" placeholder="请输入内容"></el-input>
+				</el-form-item>
+				<el-form-item label="二维码地址:">
+					<el-input type="text" v-model="qrImageUrl" placeholder="请输入内容"></el-input>
+				</el-form-item>
+				<el-form-item>
+					<el-button type="primary" @click="submitOk()">转换</el-button>
+					<el-button type="primary" @click="othDec()">解析方法1</el-button>
+					<el-button type="primary" @click="myDec()">解析方法2</el-button>
+					<el-button type="primary" @click="handleCopy()">复制结果</el-button>
+				</el-form-item>
+
+			</el-form>
+
+
+			<!-- <canvas ref="qrcodeCanvas"></canvas> -->
+			<div class="qrcode" ref="qrcodeCanvas">
+
+			</div>
+		</div>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.7.0-alpha.4/vue.min.js"></script>
+		<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+		<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/vue-clipboard2@latest/dist/vue-clipboard.min.js"></script>
+		<script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+		<script src="https://cdn.bootcdn.net/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+		<script type="text/javascript">
+			axios.defaults.withCredentials = true
+			axios.defaults.crossDomain = true
+			axios.defaults.baseURL = '/api/survey/'
+			new Vue({
+				el: "#app",
+				data: {
+					my_url: 'http://bj.bcebos.com/prody/user_avatar/img/2023014211/use25551.8?D=sina,ishare&key=',
+					other_url: 'http://todesk-user-pic.oss-cn-guangzhou.aliyuncs.com/202305241535155fc6b8b7c820f0.Svg?_w3x=16668&sdf=939989&345=ym4n&ID=sina,wx&key=2350ee7ade15f105d94d96e1b2bcbe17f353119755d7d97b3cfce0bb9475c5f99a220dfb63edd0dd67cf65e1af0d4e86e2e01ab935d9f05c7464ac48cd7bc9385284e2bd2e027bdb0f598dbe38184f8c894d5755ac4acaa51e68c70f1cf6ecdee8c85a183c7915c14bbee04650ef4f7def39a4313b8078c919b7eaae675da9084635abf670084f7433db85f56ad73d48fc3bf00970393994c777e647d70a05afa46ff6372142de0bc78514d0509377ecd0ddb239249a97fdc5fd092e9f36d0f9&NB20230627',
+					ok_url: "",
+					my_data: {
+						m3u8: '',
+						title: '',
+						btnText: '不在群的兄弟欢迎点击加群',
+						btnUrl: '',
+					},
+					other_data: {
+						m3u8: '',
+						title: '',
+						btnText: '',
+						btnUrl: '',
+					},
+					data: '',
+					qrImageUrl: '',
+				},
+				methods: {
+					submitOk() {
+						// let yjson =
+						// 	`{"title": "${this.my_data['title']}", "m3u8_url": "${this.other_data['m3u8']}", "btn": "${this.my_data['btnText']}", "dwz": "${this.my_data['btnUrl']}"}`
+						// let js_res = this.myEecrypt(String(yjson));
+						let ys_str =
+							`${this.other_data['m3u8']}|${this.my_data['title']}|${this.my_data['btnText']}|${this.my_data['btnUrl']}`;
+						let js_res = this.othAesEnc(ys_str);
+						console.log(js_res);
+						this.ok_url = this.my_url + js_res;
+						// 创建 QRCode 实例
+						console.log(this.$refs.qrcodeCanvas);
+						const canvasElement = this.$refs.qrcodeCanvas;
+						var qrcode = new QRCode(canvasElement, {
+							text: this.ok_url, // 需要转换为二维码的内容
+							colorDark: '#000000',
+							colorLight: '#ffffff',
+							correctLevel: QRCode.CorrectLevel.H
+						})
+						html2canvas(canvasElement).then((canvas) => {
+							canvas.toBlob((blob) => {
+								const formData = new FormData();
+								formData.append('file', blob, 'qrcode.png');
+								axios.post('uploadFile', formData).then((response) => {
+									console.log('Upload success:', response.data.data.imgUrl);
+									this.qrImageUrl = response.data.data.imgUrl;
+									this.handleCopy();
+								}).catch((error) => {
+									console.error('Upload failed:', error.response.data);
+								});
+							}, 'image/png');
+						})
+						
+					},
+					othDec() {
+						let other_url_key = this.getQueryVariable(this.other_url, 'key');
+						this.other_data = this.othAesDnc(other_url_key);
+					},
+					myDec() {
+						let my_destr = this.other_url.split("??=")[1];
+						let my_dejson = JSON.parse(this.myDecrypt(my_destr));
+						let data = {
+							m3u8: my_dejson['m3u8_url'],
+							title: my_dejson['title'],
+							btnText: my_dejson['btn'],
+							btnUrl: my_dejson['dwz'],
+						}
+						this.other_data = data;
+					},
+					getQueryVariable(url, variable) {
+						let query = url.split('?')[1];
+						let vars = query.split("&");
+						for (let i = 0; i < vars.length; i++) {
+							let pair = vars[i].split("=");
+							if (pair[0] == variable) {
+								return pair[1];
+							}
+						}
+						return (false);
+					},
+					myDecrypt(data) {
+						let pkey = "mk%8nih@G7VOu0I9";
+						let piv = "547wgl973bLHOkaO";
+						const key = CryptoJS.enc.Utf8.parse(pkey); // 十六位十六进制数作为密钥
+						const iv = CryptoJS.enc.Utf8.parse(piv); // 十六位十六进制数作为密钥偏移量
+						let encryptData = CryptoJS.AES.decrypt(data, key, {
+							mode: CryptoJS.mode.CBC,
+							iv: iv,
+							padding: CryptoJS.pad.Pkcs7
+						});
+						let encryptDataStr = encryptData.toString(CryptoJS.enc.Utf8);
+						return encryptDataStr.toString();
+					},
+					myEecrypt(data) {
+						let pkey = "mk%8nih@G7VOu0I9";
+						let piv = "547wgl973bLHOkaO";
+						const key = CryptoJS.enc.Utf8.parse(pkey); // 十六位十六进制数作为密钥
+						const iv = CryptoJS.enc.Utf8.parse(piv); // 十六位十六进制数作为密钥偏移量
+						let encryptData = CryptoJS.AES.encrypt(data, key, {
+							mode: CryptoJS.mode.CBC,
+							iv: iv,
+							padding: CryptoJS.pad.Pkcs7
+						});
+						return encryptData.toString();
+					},
+					othAesEnc(data) {
+						let enkey = '12348888'; //密钥
+						let eniv = ''; //十六位十六进制数作为密钥偏移量
+						let key = CryptoJS.enc.Utf8.parse(enkey);
+						let iv = CryptoJS.enc.Utf8.parse(eniv);
+						console.log(key);
+						console.log(iv);
+						let encrypted = CryptoJS.AES.encrypt(data, key, {
+							iv: iv,
+							mode: CryptoJS.mode.CBC,
+							padding: CryptoJS.pad.Pkcs7
+						});
+
+						return encrypted.ciphertext.toString(); //返回的是base64格式的密文
+					},
+					othAesDnc(data) {
+						let keys = '12348888'; //密钥
+						const key = CryptoJS.enc.Utf8.parse(keys);
+						const iv = CryptoJS.enc.Utf8.parse('');
+						console.log(key.toString());
+						console.log(iv.toString());
+						const strtext = CryptoJS.enc.Hex.parse(data);
+						const decrypt = CryptoJS.AES.decrypt({
+							'ciphertext': strtext
+						}, key, {
+							iv: iv,
+							mode: CryptoJS.mode.CBC,
+							padding: CryptoJS.pad.Pkcs7
+						});
+						const decryptedStr = decrypt.toString(CryptoJS.enc.Utf8);
+						let res = decryptedStr.toString();
+						let res_list = res.split('|');
+						let res_json = {
+							m3u8: res_list[0],
+							title: res_list[1],
+							btnText: res_list[2],
+							btnUrl: res_list[3],
+						}
+						return res_json;
+					},
+					handleCopy() {
+						this.$copyText(this.qrImageUrl).then(() => {
+							this.$message.success('内容已复制到剪切板！')
+						}).catch((error) => {
+							this.$message.error(error)
+						});
+					}
+
+				}
+			})
+		</script>
+
+		<style>
+			.qrcode {
+				display: inline-block;
+				padding: 20px;
+			}
+
+			.qrcode img {
+				background-color: #fff; //设置白色背景色
+				padding: 10px; // 利用padding的特性，挤出白边
+				box-sizing: border-box;
+			}
+		</style>
+	</body>
+</html>
